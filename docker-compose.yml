@@ -15,8 +15,6 @@ services:
   db:
     image: postgres:16.1-alpine
     container_name: db
-    env_file:
-      - .env
     ports:
       - "${POSTGRESQL_EXT_PORT}:${DJANGO_DB_PORT}"
     environment:
@@ -24,7 +22,7 @@ services:
       - POSTGRES_USER=${DJANGO_DB_USER}
       - POSTGRES_PASSWORD=${DJANGO_DB_PASS}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "${DJANGO_DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
       interval: 10s
       timeout: 5s
       retries: 5
