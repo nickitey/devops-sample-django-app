@@ -1,7 +1,20 @@
 services:
-  postgres:
+  dummy-parrot:
+    container_name: dummy-parrot
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    env_file: 
+      - .env
+    command: >
+      sh -c "python manage.py migrate && uwsgi --ini uwsgi.ini"
+
+  db:
     image: postgres:16.1-alpine
-    container_name: parrot-postgres
+    container_name: db
     env_file:
       - .env
     ports:
@@ -10,20 +23,15 @@ services:
       - POSTGRES_DB=${DJANGO_DB_NAME}
       - POSTGRES_USER=${DJANGO_DB_USER}
       - POSTGRES_PASSWORD=${DJANGO_DB_PASS}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "${DJANGO_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     volumes:
       - parrot-postgres-data:/var/lib/postgresql/data
 
-  dummy-parrot:
-    container_name: dummy-parrot
-    build: .
-    ports:
-      - "8000:8000"
-    depends_on:
-      - postgres
-    env_file: 
-      - .env
-    command: >
-      sh -c "python manage.py makemigrations && python manage.py migrate && uwsgi --ini uwsgi.ini"
 
 volumes:
   parrot-postgres-data:
